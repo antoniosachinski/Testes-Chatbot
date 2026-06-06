@@ -1,0 +1,13 @@
+{
+  "name": "gerar-caderno-testes",
+  "version": "1.0.0",
+  "description": "Gerador de caderno de testes em .docx a partir de logs .txt",
+  "main": "generateReport.js",
+  "scripts": {
+    "gerar": "node generateReport.js",
+    "gerar:custom": "node generateReport.js --dir ./txts --out Caderno_de_Testes.docx"
+  },
+  "dependencies": {
+    "docx": "^8.5.0"
+  }
+}
