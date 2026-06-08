@@ -79,8 +79,8 @@ Cypress.Commands.add(
 /**
  * Transforma o array de mensagens brutas em passos estruturados para reprodução.
  * Cada passo contém:
- *   - msg:   texto do bot que dispara a interação (primeiras palavras para match parcial)
- *   - input: resposta do usuário (null = apenas verificar exibição)
+ *   - chave:        primeiras palavras do bot para match parcial no cy.contains()
+ *   - input:        resposta do usuário (null = apenas verificar exibição)
  *   - textoCompleto: mensagem do bot na íntegra
  *   - resposta:      resposta do usuário na íntegra
  */
@@ -95,7 +95,7 @@ Cypress.Commands.add('buildSteps', (mensagens, botName = 'Bot') => {
       const proxima = mensagens[i + 1];
       const temResposta = proxima?.autor === 'Usuário';
 
-      // Usa as primeiras 4 palavras para match parcial no Cypress.contains()
+      // Usa as primeiras 4 palavras para match parcial no cy.contains()
       const chave = msg.texto
         .replace(/\s*[\d]{4,}.*$/s, '') // remove sequências numéricas longas (protocolos)
         .split(' ')
@@ -104,8 +104,8 @@ Cypress.Commands.add('buildSteps', (mensagens, botName = 'Bot') => {
         .trim();
 
       steps.push({
-        chave,                              // chave de busca para cy.contains()
-        textoCompleto: msg.texto,           // mensagem completa do bot
+        chave,
+        textoCompleto: msg.texto,
         input: temResposta ? proxima.texto : null,
         resposta: temResposta ? proxima.texto : null,
         tipo: msg.tipo,
@@ -211,31 +211,42 @@ Cypress.Commands.add('selecionarOpcaoChat', (textoOpcao, opts = {}) => {
 
 /**
  * Acessa o ambiente do bot com seleção de agente.
- * Configurável para diferentes URLs e agentes.
+ * Lê variáveis de ambiente via cy.task('getBotEnv') — roda no Node, acesso garantido ao .env.
+ * Aceita overrides pontuais via parâmetro `opcoes`.
  */
 Cypress.Commands.add('iniciarBot', (opcoes = {}) => {
-  const {
-    url          = Cypress.env('BOT_URL'),
-    saudacaoBot  = Cypress.env('BOT_SAUDACAO'),
-    codigoAgente = Cypress.env('BOT_CODIGO_AG'),
-    seletorAgente = Cypress.env('BOT_SELETOR_AG') || '#agent2',
-  } = opcoes;
+  cy.task('getBotEnv').then((env) => {
+    const url           = opcoes.url           ?? env.url;
+    const saudacaoBot   = opcoes.saudacaoBot   ?? env.saudacao;
+    const codigoAgente  = opcoes.codigoAgente  ?? env.codigoAg;
+    const seletorAgente = opcoes.seletorAgente ?? env.seletorAg;
 
-  cy.visit(url);
-  cy.contains(saudacaoBot, { timeout: 30_000 }).should('be.visible');
-  cy.get(seletorAgente).click();
-  cy.wait(500);
-  cy.get('.input-group input, [data-testid="chat-input"]').type(codigoAgente);
-  cy.wait(500);
-  cy.get('#widgetSendButton, [data-testid="send-button"]').first().click();
-  cy.log(`🚀 Bot iniciado com agente: ${codigoAgente}`);
+    if (!url) throw new Error('BOT_URL não definida. Verifique o .env e a task getBotEnv no cypress.config.js');
+
+    cy.visit(url);
+    cy.contains(saudacaoBot, { timeout: 30_000 }).should('be.visible');
+    cy.get(seletorAgente).click();
+    cy.wait(500);
+    cy.get('.input-group input, [data-testid="chat-input"]').type(codigoAgente);
+    cy.wait(500);
+    cy.get('#widgetSendButton, [data-testid="send-button"]').first().click();
+    cy.log(`🚀 Bot iniciado com agente: ${codigoAgente}`);
+  });
 });
 
-// Alias de compatibilidade com scripts existentes
-Cypress.Commands.add('iniciarAgente2020', () => cy.iniciarBot({ codigoAgente: Cypress.env('BOT_CODIGO_AG') }));
+// ── Aliases de compatibilidade ────────────────────────────────────────────────
+
+Cypress.Commands.add('iniciarAgente2020', () => {
+  cy.task('getBotEnv').then((env) => {
+    cy.iniciarBot({ codigoAgente: env.codigoAg });
+  });
+});
+
 Cypress.Commands.add('iniciarAgente5050', () => {
-  cy.iniciarBot({ codigoAgente: Cypress.env('BOT_CODIGO_AG_5050') });
-  cy.InputForMessage('Selecione o fluxo para homologar:', '3');
+  cy.task('getBotEnv').then((env) => {
+    cy.iniciarBot({ codigoAgente: env.codigoAg5050 });
+    cy.InputForMessage('Selecione o fluxo para homologar:', '3');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -251,13 +262,14 @@ Cypress.Commands.add('gerarBlocoLog', (dadosTeste, status, link) => {
     const data = new Date().toLocaleString('pt-BR');
     const id   = dadosTeste.id || dadosTeste.cenario?.replace(/\s+/g, '-').toUpperCase() || 'SEM-ID';
 
-    const resultadoEsperado = dadosTeste.resultadoEsperado ||
+    const resultadoEsperado =
+      dadosTeste.resultadoEsperado ||
       (status === 'passed' ? 'Fluxo reproduzido com sucesso' : 'Verificar falha no log do Cypress');
 
     // Constrói histórico de mensagens
     const historico = (dadosTeste.steps || [])
-      .filter(s => !s.ignore)
-      .map(s => {
+      .filter((s) => !s.ignore)
+      .map((s) => {
         const linhas = [`  🤖 BOT   : ${s.textoCompleto || s.chave}`];
         if (s.resposta) linhas.push(`  👤 USUÁRIO: ${s.resposta}`);
         return linhas.join('\n');

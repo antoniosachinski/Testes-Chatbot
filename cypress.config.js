@@ -19,8 +19,9 @@ export default defineConfig({
     pageLoadTimeout: 60_000,
 
     setupNodeEvents(on, config) {
-      // ── Credenciais de acesso ao portal ──────────────────────────────────
       on('task', {
+
+        // ── Credenciais de acesso ao portal ────────────────────────────────
         getCredentials() {
           return {
             email:    process.env.CYPRESS_EMAIL,
@@ -28,7 +29,18 @@ export default defineConfig({
           };
         },
 
-        // ── Leitura de fixture JSON pelo Node (evita CORS no browser) ─────
+        // ── Variáveis de ambiente do bot ────────────────────────────────────
+        getBotEnv() {
+          return {
+            url:          process.env.BOT_URL,
+            saudacao:     process.env.BOT_SAUDACAO,
+            codigoAg:     process.env.BOT_CODIGO_AG,
+            seletorAg:    process.env.BOT_SELETOR_AG,
+            codigoAg5050: process.env.BOT_CODIGO_AG_5050,
+          };
+        },
+
+        // ── Leitura de fixture JSON pelo Node (evita CORS no browser) ───────
         lerFixture({ caminhoRelativo }) {
           const fullPath = path.resolve(__dirname, caminhoRelativo);
           if (!fs.existsSync(fullPath)) {
@@ -37,13 +49,14 @@ export default defineConfig({
           }
           const raw = fs.readFileSync(fullPath, 'utf-8');
           // Suporta tanto JSON puro quanto "export const testes = [...];"
-          const jsonMatch = raw.match(/export\s+const\s+\w+\s*=\s*(\[[\s\S]*\]);/) ||
-                            raw.match(/module\.exports\s*=\s*(\{[\s\S]*\})/);
+          const jsonMatch =
+            raw.match(/export\s+const\s+\w+\s*=\s*(\[[\s\S]*\]);/) ||
+            raw.match(/module\.exports\s*=\s*(\{[\s\S]*\})/);
           if (jsonMatch) return JSON.parse(jsonMatch[1]);
           return JSON.parse(raw);
         },
 
-        // ── Gravação de arquivo de log TXT ────────────────────────────────
+        // ── Gravação de arquivo de log TXT ──────────────────────────────────
         appendLog({ filePath, content }) {
           const dir = path.dirname(filePath);
           if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -51,7 +64,7 @@ export default defineConfig({
           return null;
         },
 
-        // ── Garantir que arquivo existe (para leitura vazia) ──────────────
+        // ── Garantir que arquivo existe (para leitura vazia) ────────────────
         ensureFile({ filePath, defaultContent = '' }) {
           if (!fs.existsSync(filePath)) {
             const dir = path.dirname(filePath);
