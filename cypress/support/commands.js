@@ -297,3 +297,10 @@ Cypress.Commands.add('gerarBlocoLog', (dadosTeste, status, link) => {
     return bloco;
   });
 });
+
+Cypress.Commands.add('iniciarAgente5050', () => {
+  cy.task('getBotEnv').then((env) => {
+    cy.iniciarBot({ codigoAgente: env.codigoAg5050 });
+    cy.InputForMessage(env.menu5050Pergunta, env.menu5050Opcao);
+  });
+});

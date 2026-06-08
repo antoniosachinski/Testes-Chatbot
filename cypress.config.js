@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname  = path.dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -24,7 +24,7 @@ export default defineConfig({
         // ── Credenciais de acesso ao portal ────────────────────────────────
         getCredentials() {
           return {
-            email:    process.env.CYPRESS_EMAIL,
+            email: process.env.CYPRESS_EMAIL,
             password: process.env.CYPRESS_PASSWORD,
           };
         },
@@ -32,11 +32,12 @@ export default defineConfig({
         // ── Variáveis de ambiente do bot ────────────────────────────────────
         getBotEnv() {
           return {
-            url:          process.env.BOT_URL,
-            saudacao:     process.env.BOT_SAUDACAO,
-            codigoAg:     process.env.BOT_CODIGO_AG,
-            seletorAg:    process.env.BOT_SELETOR_AG,
-            codigoAg5050: process.env.BOT_CODIGO_AG_5050,
+            url: process.env.BOT_URL,
+            saudacao: process.env.BOT_SAUDACAO,
+            codigoAg: process.env.BOT_CODIGO_AG,        // lucia5050
+            seletorAg: process.env.BOT_SELETOR_AG || '#agent2',
+            menu5050Pergunta: process.env.BOT_5050_MENU_PERGUNTA,
+            menu5050Opcao: process.env.BOT_5050_MENU_OPCAO,
           };
         },
 

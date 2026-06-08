@@ -33,17 +33,17 @@ import { runtimeState } from '../support/commands';
 
 // ─── Configuração ─────────────────────────────────────────────────────────────
 
-const FIXTURE_PATH  = 'cypress/fixtures/atendimento_extraido.json';
-const LOG_DIR       = 'gerarCaderno/txts';
+const FIXTURE_PATH = 'cypress/fixtures/atendimento_extraido.json';
+const LOG_DIR = 'gerarCaderno/txts';
 
 /**
  * Configuração do ambiente do bot.
  * Pode ser sobrescrita por variáveis de ambiente CYPRESS_*.
  */
 const BOT_CONFIG = {
-  url:          Cypress.env('BOT_URL'),
-  saudacaoBot:  Cypress.env('BOT_SAUDACAO'),
-  seletorAgente: Cypress.env('BOT_SELETOR_AG')  || '#agent2',
+  url: Cypress.env('BOT_URL'),
+  saudacaoBot: Cypress.env('BOT_SAUDACAO'),
+  seletorAgente: Cypress.env('BOT_SELETOR_AG') || '#agent2',
   codigoAgente: Cypress.env('BOT_CODIGO_AG'),
 };
 
@@ -55,7 +55,7 @@ const BOT_CONFIG = {
  */
 function formatarBlocoLog({ atendimento, status, link, historico }) {
   const data = new Date().toLocaleString('pt-BR');
-  const id   = atendimento.id || 'SEM-ID';
+  const id = atendimento.id || 'SEM-ID';
 
   const linhas = [
     `ID               : ${id}`,
@@ -135,7 +135,7 @@ if (atendimentosFixture.length === 0) {
     describe(`Atendimento — ${atendimento.cenario}`, () => {
 
       const logPath = `${LOG_DIR}/${atendimento.id}.txt`;
-      let   cabecalhoEscrito = false;
+      let cabecalhoEscrito = false;
 
       beforeEach(() => {
         cy.resetColetaDados();
@@ -144,12 +144,12 @@ if (atendimentosFixture.length === 0) {
 
       afterEach(function () {
         const status = this.currentTest.state;
-        const link   = runtimeState.chatConversationLink || 'Link não capturado';
+        const link = runtimeState.chatConversationLink || 'Link não capturado';
 
         const historico = runtimeState.logEntries
           .map(entry => {
             const icone = entry.tipo === 'bot' ? '🤖 BOT   ' :
-                          entry.tipo === 'usuario' ? '👤 USUÁRIO' : '🔘 OPÇÃO  ';
+              entry.tipo === 'usuario' ? '👤 USUÁRIO' : '🔘 OPÇÃO  ';
             return `  [${entry.timestamp}] ${icone}: ${entry.conteudo}`;
           })
           .join('\n');
@@ -169,22 +169,27 @@ if (atendimentosFixture.length === 0) {
       });
 
       it(`${atendimento.id}: ${atendimento.caso || 'Reprodução automática'}`, function () {
-        cy.iniciarBot(BOT_CONFIG);
-
-        for (const step of atendimento.steps) {
-          if (step.ignore) {
-            cy.log(`⏭️ Step ignorado: "${step.chave}"`);
-            continue;
-          }
-
-          if (step.input !== null) {
-            cy.InputForMessage(step.chave, step.input);
+        cy.task('getBotEnv').then((env) => {
+          if (env.codigoAg?.includes('5050')) {
+            cy.iniciarAgente5050();
           } else {
-            cy.verifyChatMessage(step.chave);
+            cy.iniciarBot(BOT_CONFIG);
           }
-        }
 
-        cy.wait(5000);
+          for (const step of atendimento.steps) {
+            if (step.ignore) {
+              cy.log(`⏭️ Step ignorado: "${step.chave}"`);
+              continue;
+            }
+            if (step.input !== null) {
+              cy.InputForMessage(step.chave, step.input);
+            } else {
+              cy.verifyChatMessage(step.chave);
+            }
+          }
+
+          cy.wait(5000);
+        });
       });
     });
   }
