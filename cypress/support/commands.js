@@ -214,38 +214,22 @@ Cypress.Commands.add('selecionarOpcaoChat', (textoOpcao, opts = {}) => {
  * Lê variáveis de ambiente via cy.task('getBotEnv') — roda no Node, acesso garantido ao .env.
  * Aceita overrides pontuais via parâmetro `opcoes`.
  */
-Cypress.Commands.add('iniciarBot', (opcoes = {}) => {
+Cypress.Commands.add('iniciarBot', () => {
   cy.task('getBotEnv').then((env) => {
-    const url           = opcoes.url           ?? env.url;
-    const saudacaoBot   = opcoes.saudacaoBot   ?? env.saudacao;
-    const codigoAgente  = opcoes.codigoAgente  ?? env.codigoAg;
-    const seletorAgente = opcoes.seletorAgente ?? env.seletorAg;
+    if (!env.url) throw new Error('BOT_URL não definida. Verifique o .env e a task getBotEnv no cypress.config.js');
 
-    if (!url) throw new Error('BOT_URL não definida. Verifique o .env e a task getBotEnv no cypress.config.js');
-
-    cy.visit(url);
-    cy.contains(saudacaoBot, { timeout: 30_000 }).should('be.visible');
-    cy.get(seletorAgente).click();
+    cy.visit(env.url);
+    cy.contains(env.saudacao, { timeout: 30_000 }).should('be.visible');
+    cy.get(env.seletorAg).click();
     cy.wait(500);
-    cy.get('.input-group input, [data-testid="chat-input"]').type(codigoAgente);
+    cy.get('.input-group input, [data-testid="chat-input"]').type(env.codigoAg);
     cy.wait(500);
     cy.get('#widgetSendButton, [data-testid="send-button"]').first().click();
-    cy.log(`🚀 Bot iniciado com agente: ${codigoAgente}`);
-  });
-});
+    cy.log(`🚀 Bot iniciado com agente: ${env.codigoAg}`);
 
-// ── Aliases de compatibilidade ────────────────────────────────────────────────
-
-Cypress.Commands.add('iniciarAgente2020', () => {
-  cy.task('getBotEnv').then((env) => {
-    cy.iniciarBot({ codigoAgente: env.codigoAg });
-  });
-});
-
-Cypress.Commands.add('iniciarAgente5050', () => {
-  cy.task('getBotEnv').then((env) => {
-    cy.iniciarBot({ codigoAgente: env.codigoAg5050 });
-    cy.InputForMessage('Selecione o fluxo para homologar:', '3');
+    if (env.menu5050Opcao != null) {
+      cy.InputForMessage(env.menu5050Pergunta, env.menu5050Opcao);
+    }
   });
 });
 
@@ -260,7 +244,7 @@ Cypress.Commands.add('iniciarAgente5050', () => {
 Cypress.Commands.add('gerarBlocoLog', (dadosTeste, status, link) => {
   return cy.wrap(null).then(() => {
     const data = new Date().toLocaleString('pt-BR');
-    const id   = dadosTeste.id || dadosTeste.cenario?.replace(/\s+/g, '-').toUpperCase() || 'SEM-ID';
+    const id = dadosTeste.id || dadosTeste.cenario?.replace(/\s+/g, '-').toUpperCase() || 'SEM-ID';
 
     const resultadoEsperado =
       dadosTeste.resultadoEsperado ||

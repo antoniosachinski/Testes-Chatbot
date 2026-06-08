@@ -169,27 +169,21 @@ if (atendimentosFixture.length === 0) {
       });
 
       it(`${atendimento.id}: ${atendimento.caso || 'Reprodução automática'}`, function () {
-        cy.task('getBotEnv').then((env) => {
-          if (env.codigoAg?.includes('5050')) {
-            cy.iniciarAgente5050();
+        cy.iniciarBot();
+
+        for (const step of atendimento.steps) {
+          if (step.ignore) {
+            cy.log(`⏭️ Step ignorado: "${step.chave}"`);
+            continue;
+          }
+          if (step.input !== null) {
+            cy.InputForMessage(step.chave, step.input);
           } else {
-            cy.iniciarBot(BOT_CONFIG);
+            cy.verifyChatMessage(step.chave);
           }
+        }
 
-          for (const step of atendimento.steps) {
-            if (step.ignore) {
-              cy.log(`⏭️ Step ignorado: "${step.chave}"`);
-              continue;
-            }
-            if (step.input !== null) {
-              cy.InputForMessage(step.chave, step.input);
-            } else {
-              cy.verifyChatMessage(step.chave);
-            }
-          }
-
-          cy.wait(5000);
-        });
+        cy.wait(5000);
       });
     });
   }
