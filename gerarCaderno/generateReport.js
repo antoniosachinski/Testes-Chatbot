@@ -32,7 +32,7 @@ const argOut = args[args.indexOf('--out') + 1];
 
 // ─── Configuração ─────────────────────────────────────────────────────────────
 const CONFIG = {
-  txtDir:  argDir || './txts',
+  txtDir:  argDir || './gerarCaderno/txts',
   outFile: argOut || 'Caderno_de_Testes_Final.docx',
   docInfo: {
     titulo:     'Caderno de Testes — Execuções Chatbot',
