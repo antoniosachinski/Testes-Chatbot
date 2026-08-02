@@ -145,7 +145,7 @@ cypress/videos/
 cypress/screenshots/
 cypress/downloads/
 cypress/fixtures/
-cypress/e2e/executar_caso_de_teste
+cypress/e2e/executar_caso_de_teste.cy.js
 
 # Cypress env (credenciais e configurações sensíveis)
 cypress.env.json
