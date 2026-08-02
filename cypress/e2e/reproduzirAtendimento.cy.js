@@ -183,7 +183,7 @@ if (atendimentosFixture.length === 0) {
           }
         }
 
-        cy.wait(5000);
+        cy.wait(10000);
       });
     });
   }
